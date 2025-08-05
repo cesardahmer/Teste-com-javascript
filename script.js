@@ -35,10 +35,8 @@ function handleCellClick(e) {
     }
 
     // Processa a jogada do jogador humano
-    gameBoard[clickedCellIndex] = currentPlayer;
-    clickedCell.classList.add(currentPlayer.toLowerCase());
-    clickedCell.textContent = currentPlayer;
-
+    updateBoard(clickedCellIndex, currentPlayer);
+    
     // Checa se o jogador atual venceu ou se houve um empate
     checkForWinner();
     
@@ -51,46 +49,81 @@ function handleCellClick(e) {
 
 // Função que simula a jogada do computador
 function computerMove() {
-    // Encontra todas as células vazias
-    const emptyCells = gameBoard.map((cell, index) => cell === '' ? index : null).filter(index => index !== null);
-    
-    // Se houver células vazias, o computador escolhe uma aleatoriamente
-    if (emptyCells.length > 0) {
-        const randomIndex = Math.floor(Math.random() * emptyCells.length);
-        const computerMoveIndex = emptyCells[randomIndex];
-        
-        // Simula o clique na célula escolhida
-        const cellElement = cells[computerMoveIndex];
-        
-        gameBoard[computerMoveIndex] = computerPlayer;
-        cellElement.classList.add(computerPlayer.toLowerCase());
-        cellElement.textContent = computerPlayer;
-        
+    let move = getBestMove();
+    if (move !== -1) {
+        updateBoard(move, computerPlayer);
         checkForWinner();
     }
 }
 
-// Função para checar por uma condição de vitória ou empate
-function checkForWinner() {
-    let roundWon = false;
-
-    for (let i = 0; i < winningConditions.length; i++) {
-        const winCondition = winningConditions[i];
-        const a = gameBoard[winCondition[0]];
-        const b = gameBoard[winCondition[1]];
-        const c = gameBoard[winCondition[2]];
-
-        if (a === '' || b === '' || c === '') {
-            continue;
-        }
-
-        if (a === b && b === c) {
-            roundWon = true;
-            break;
+// Função que determina a melhor jogada para o computador
+function getBestMove() {
+    // 1. Checa se o computador pode vencer na próxima jogada
+    for (let i = 0; i < gameBoard.length; i++) {
+        if (gameBoard[i] === '') {
+            let tempBoard = [...gameBoard];
+            tempBoard[i] = computerPlayer;
+            if (checkWinning(tempBoard, computerPlayer)) {
+                return i;
+            }
         }
     }
 
-    if (roundWon) {
+    // 2. Checa se o jogador humano pode vencer na próxima jogada e bloqueia
+    for (let i = 0; i < gameBoard.length; i++) {
+        if (gameBoard[i] === '') {
+            let tempBoard = [...gameBoard];
+            tempBoard[i] = 'X';
+            if (checkWinning(tempBoard, 'X')) {
+                return i;
+            }
+        }
+    }
+
+    // 3. Tenta pegar o centro
+    if (gameBoard[4] === '') {
+        return 4;
+    }
+
+    // 4. Tenta pegar um dos cantos
+    const corners = [0, 2, 6, 8];
+    const availableCorners = corners.filter(index => gameBoard[index] === '');
+    if (availableCorners.length > 0) {
+        return availableCorners[Math.floor(Math.random() * availableCorners.length)];
+    }
+
+    // 5. Tenta pegar uma das bordas
+    const edges = [1, 3, 5, 7];
+    const availableEdges = edges.filter(index => gameBoard[index] === '');
+    if (availableEdges.length > 0) {
+        return availableEdges[Math.floor(Math.random() * availableEdges.length)];
+    }
+
+    return -1; // Sem jogada disponível
+}
+
+// Função auxiliar para verificar se um jogador venceu em um tabuleiro temporário
+function checkWinning(board, player) {
+    for (let i = 0; i < winningConditions.length; i++) {
+        const [a, b, c] = winningConditions[i];
+        if (board[a] === player && board[b] === player && board[c] === player) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Função para atualizar o tabuleiro (interface e array)
+function updateBoard(index, player) {
+    gameBoard[index] = player;
+    const cellElement = cells[index];
+    cellElement.classList.add(player.toLowerCase());
+    cellElement.textContent = player;
+}
+
+// Função para checar por uma condição de vitória ou empate
+function checkForWinner() {
+    if (checkWinning(gameBoard, currentPlayer)) {
         statusText.textContent = `Jogador ${currentPlayer} venceu!`;
         isGameActive = false;
         return;
