@@ -9,6 +9,8 @@ let gameBoard = ['', '', '', '', '', '', '', '', ''];
 let currentPlayer = 'X';
 // Variável para verificar se o jogo está ativo
 let isGameActive = true;
+// Define o jogador do computador
+const computerPlayer = 'O';
 
 // Combinações de vitória (índices das células)
 const winningConditions = [
@@ -27,18 +29,45 @@ function handleCellClick(e) {
     const clickedCell = e.target;
     const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
 
-    // Verifica se a célula já foi preenchida ou se o jogo não está ativo
-    if (gameBoard[clickedCellIndex] !== '' || !isGameActive) {
+    // Impede que o jogador humano jogue na vez do computador
+    if (gameBoard[clickedCellIndex] !== '' || !isGameActive || currentPlayer === computerPlayer) {
         return;
     }
 
-    // Atualiza o tabuleiro e a interface com o movimento do jogador atual
+    // Processa a jogada do jogador humano
     gameBoard[clickedCellIndex] = currentPlayer;
     clickedCell.classList.add(currentPlayer.toLowerCase());
     clickedCell.textContent = currentPlayer;
 
     // Checa se o jogador atual venceu ou se houve um empate
     checkForWinner();
+    
+    // Se o jogo continuar ativo, é a vez do computador
+    if (isGameActive) {
+        // Usa um pequeno delay para a jogada do computador parecer mais natural
+        setTimeout(computerMove, 500); 
+    }
+}
+
+// Função que simula a jogada do computador
+function computerMove() {
+    // Encontra todas as células vazias
+    const emptyCells = gameBoard.map((cell, index) => cell === '' ? index : null).filter(index => index !== null);
+    
+    // Se houver células vazias, o computador escolhe uma aleatoriamente
+    if (emptyCells.length > 0) {
+        const randomIndex = Math.floor(Math.random() * emptyCells.length);
+        const computerMoveIndex = emptyCells[randomIndex];
+        
+        // Simula o clique na célula escolhida
+        const cellElement = cells[computerMoveIndex];
+        
+        gameBoard[computerMoveIndex] = computerPlayer;
+        cellElement.classList.add(computerPlayer.toLowerCase());
+        cellElement.textContent = computerPlayer;
+        
+        checkForWinner();
+    }
 }
 
 // Função para checar por uma condição de vitória ou empate
@@ -81,7 +110,12 @@ function checkForWinner() {
 // Função para alternar o jogador
 function changePlayer() {
     currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-    statusText.textContent = `Vez do Jogador ${currentPlayer}`;
+    
+    if (currentPlayer === 'X') {
+        statusText.textContent = `Vez do Jogador X`;
+    } else {
+        statusText.textContent = `Vez do Computador`;
+    }
 }
 
 // Função para reiniciar o jogo
@@ -89,7 +123,7 @@ function restartGame() {
     gameBoard = ['', '', '', '', '', '', '', '', ''];
     currentPlayer = 'X';
     isGameActive = true;
-    statusText.textContent = `Vez do Jogador ${currentPlayer}`;
+    statusText.textContent = `Vez do Jogador X`;
 
     cells.forEach(cell => {
         cell.textContent = '';
